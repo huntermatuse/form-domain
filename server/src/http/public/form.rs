@@ -515,6 +515,44 @@ pub enum QuestionKind {
         max_selected: Option<usize>,
         allow_comment: bool,
     },
+    Email {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+    },
+    Phone {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+    },
+    Date {
+        description_markdown: Option<String>,
+    },
+    Number {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+        min: Option<f64>,
+        max: Option<f64>,
+    },
+    Dropdown {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        allow_comment: bool,
+    },
+    MultiDropdown {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        min_selected: Option<usize>,
+        max_selected: Option<usize>,
+        allow_comment: bool,
+    },
+    RankedList {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        #[serde(default = "default_true")]
+        randomize_initial_order: bool,
+    },
+    ContentBlock {
+        content_markdown: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -565,6 +603,9 @@ pub enum Response {
         selected_option_ids: Vec<String>,
         comment: Option<String>,
     },
+    RankedList {
+        ranked_option_ids: Vec<String>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -572,4 +613,8 @@ pub enum Response {
 pub enum ValidationStatus {
     Confirmed,
     NotCorrect,
+}
+
+fn default_true() -> bool {
+    true
 }

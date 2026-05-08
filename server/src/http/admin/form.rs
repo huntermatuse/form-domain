@@ -1,7 +1,7 @@
 use super::require_admin;
 use crate::http::ApiContext;
 use crate::http::error::Error;
-use axum::extract::Path;
+use axum::extract::{Path, Query};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Extension, Json, Router};
@@ -17,6 +17,7 @@ pub fn router() -> Router {
             "/api/v1/admin/forms",
             get(list_forms_handler).post(create_form_handler),
         )
+        .route("/api/v1/admin/forms/check-title", get(check_title_handler))
         .route(
             "/api/v1/admin/forms/{form_id}/versions/{version}",
             get(get_form_handler),
@@ -41,6 +42,14 @@ pub fn router() -> Router {
             "/api/v1/admin/submissions/{completed_form_id}",
             get(get_submission_handler),
         )
+        .route(
+            "/api/v1/admin/submissions/{completed_form_id}/viewer-tokens",
+            get(list_viewer_tokens_handler).post(create_viewer_token_handler),
+        )
+        .route(
+            "/api/v1/admin/viewer-tokens/{viewer_token_id}/deactivate",
+            post(deactivate_viewer_token_handler),
+        )
 }
 
 async fn list_forms_handler(
@@ -60,6 +69,33 @@ async fn list_forms_handler(
     .await?;
 
     Ok(Json(rows.into_iter().map(Into::into).collect()))
+}
+
+#[derive(Debug, Deserialize)]
+struct CheckTitleQuery {
+    title: String,
+}
+
+#[derive(Debug, Serialize)]
+struct CheckTitleResponse {
+    available: bool,
+}
+
+async fn check_title_handler(
+    Extension(ctx): Extension<ApiContext>,
+    headers: HeaderMap,
+    Query(query): Query<CheckTitleQuery>,
+) -> Result<Json<CheckTitleResponse>, Error> {
+    require_admin(&ctx, &headers)?;
+
+    let title = query.title.trim().to_lowercase();
+    let exists: bool =
+        sqlx::query_scalar("select exists(select 1 from form.form where lower(trim(title)) = $1)")
+            .bind(&title)
+            .fetch_one(&ctx.db)
+            .await?;
+
+    Ok(Json(CheckTitleResponse { available: !exists }))
 }
 
 async fn create_form_handler(
@@ -220,6 +256,92 @@ async fn deactivate_share_token_handler(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn list_viewer_tokens_handler(
+    Extension(ctx): Extension<ApiContext>,
+    headers: HeaderMap,
+    Path(completed_form_id): Path<Uuid>,
+) -> Result<Json<Vec<ViewerTokenItem>>, Error> {
+    require_admin(&ctx, &headers)?;
+
+    ensure_completed_form_exists(&ctx, completed_form_id).await?;
+
+    let rows = sqlx::query_as::<_, ViewerTokenRow>(
+        r#"
+        select viewer_token_id, token_prefix, completed_form_id, active,
+            expires_at, created_at, created_by, updated_at, updated_by
+        from form.viewer_token
+        where completed_form_id = $1
+        order by created_at desc
+        "#,
+    )
+    .bind(completed_form_id)
+    .fetch_all(&ctx.db)
+    .await?;
+
+    Ok(Json(rows.into_iter().map(Into::into).collect()))
+}
+
+async fn create_viewer_token_handler(
+    Extension(ctx): Extension<ApiContext>,
+    headers: HeaderMap,
+    Path(completed_form_id): Path<Uuid>,
+    Json(req): Json<CreateViewerTokenRequest>,
+) -> Result<Json<CreateViewerTokenResponse>, Error> {
+    require_admin(&ctx, &headers)?;
+
+    ensure_completed_form_exists(&ctx, completed_form_id).await?;
+
+    let raw_token = Uuid::new_v4();
+    let token = raw_token.to_string();
+    let prefix = token.chars().take(8).collect::<String>();
+
+    let row = sqlx::query_as::<_, ViewerTokenRow>(
+        r#"
+        insert into form.viewer_token
+            (token_hash, token_prefix, completed_form_id, expires_at, created_by)
+        values ($1, $2, $3, $4, 'admin')
+        returning viewer_token_id, token_prefix, completed_form_id, active,
+            expires_at, created_at, created_by, updated_at, updated_by
+        "#,
+    )
+    .bind(token_hash(raw_token))
+    .bind(prefix)
+    .bind(completed_form_id)
+    .bind(req.expires_at)
+    .fetch_one(&ctx.db)
+    .await?;
+
+    Ok(Json(CreateViewerTokenResponse {
+        token,
+        viewer_token: row.into(),
+    }))
+}
+
+async fn deactivate_viewer_token_handler(
+    Extension(ctx): Extension<ApiContext>,
+    headers: HeaderMap,
+    Path(viewer_token_id): Path<Uuid>,
+) -> Result<StatusCode, Error> {
+    require_admin(&ctx, &headers)?;
+
+    let result = sqlx::query(
+        r#"
+        update form.viewer_token
+        set active = false, updated_by = 'admin'
+        where viewer_token_id = $1
+        "#,
+    )
+    .bind(viewer_token_id)
+    .execute(&ctx.db)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(Error::NotFound);
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn list_submissions_handler(
     Extension(ctx): Extension<ApiContext>,
     headers: HeaderMap,
@@ -339,6 +461,26 @@ async fn load_form_detail(
     .ok_or(Error::NotFound)?;
 
     form_detail_from_row(row)
+}
+
+async fn ensure_completed_form_exists(
+    ctx: &ApiContext,
+    completed_form_id: Uuid,
+) -> Result<(), Error> {
+    let exists: bool = sqlx::query_scalar(
+        r#"
+        select exists(
+            select 1
+            from form.completed_form
+            where completed_form_id = $1
+        )
+        "#,
+    )
+    .bind(completed_form_id)
+    .fetch_one(&ctx.db)
+    .await?;
+
+    if exists { Ok(()) } else { Err(Error::NotFound) }
 }
 
 fn validate_form_request(req: &CreateFormRequest) -> Result<(), Error> {
@@ -581,6 +723,59 @@ struct CreateShareTokenResponse {
     share_token: ShareTokenItem,
 }
 
+#[derive(Debug, Deserialize)]
+struct CreateViewerTokenRequest {
+    expires_at: Option<DateTime<Utc>>,
+}
+
+#[derive(sqlx::FromRow)]
+struct ViewerTokenRow {
+    viewer_token_id: Uuid,
+    token_prefix: Option<String>,
+    completed_form_id: Uuid,
+    active: bool,
+    expires_at: Option<DateTime<Utc>>,
+    created_at: DateTime<Utc>,
+    created_by: String,
+    updated_at: Option<DateTime<Utc>>,
+    updated_by: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ViewerTokenItem {
+    viewer_token_id: String,
+    token_prefix: Option<String>,
+    completed_form_id: String,
+    active: bool,
+    expires_at: Option<String>,
+    created_at: String,
+    created_by: String,
+    updated_at: Option<String>,
+    updated_by: Option<String>,
+}
+
+impl From<ViewerTokenRow> for ViewerTokenItem {
+    fn from(row: ViewerTokenRow) -> Self {
+        Self {
+            viewer_token_id: row.viewer_token_id.to_string(),
+            token_prefix: row.token_prefix,
+            completed_form_id: row.completed_form_id.to_string(),
+            active: row.active,
+            expires_at: row.expires_at.map(|value| value.to_rfc3339()),
+            created_at: row.created_at.to_rfc3339(),
+            created_by: row.created_by,
+            updated_at: row.updated_at.map(|value| value.to_rfc3339()),
+            updated_by: row.updated_by,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct CreateViewerTokenResponse {
+    token: String,
+    viewer_token: ViewerTokenItem,
+}
+
 #[derive(sqlx::FromRow)]
 struct SubmissionListRow {
     completed_form_id: Uuid,
@@ -695,6 +890,44 @@ pub enum QuestionKind {
         max_selected: Option<usize>,
         allow_comment: bool,
     },
+    Email {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+    },
+    Phone {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+    },
+    Date {
+        description_markdown: Option<String>,
+    },
+    Number {
+        description_markdown: Option<String>,
+        placeholder: Option<String>,
+        min: Option<f64>,
+        max: Option<f64>,
+    },
+    Dropdown {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        allow_comment: bool,
+    },
+    MultiDropdown {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        min_selected: Option<usize>,
+        max_selected: Option<usize>,
+        allow_comment: bool,
+    },
+    RankedList {
+        description_markdown: Option<String>,
+        options: Vec<QuestionOption>,
+        #[serde(default = "default_true")]
+        randomize_initial_order: bool,
+    },
+    ContentBlock {
+        content_markdown: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -745,6 +978,9 @@ pub enum Response {
         selected_option_ids: Vec<String>,
         comment: Option<String>,
     },
+    RankedList {
+        ranked_option_ids: Vec<String>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -752,4 +988,8 @@ pub enum Response {
 pub enum ValidationStatus {
     Confirmed,
     NotCorrect,
+}
+
+fn default_true() -> bool {
+    true
 }
