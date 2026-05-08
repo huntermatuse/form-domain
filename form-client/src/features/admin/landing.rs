@@ -1,4 +1,3 @@
-use crate::api::http::has_auth_token;
 use crate::features::admin::shared::AdminFrame;
 use crate::Route;
 use dioxus::prelude::*;
@@ -10,12 +9,6 @@ const LANDING_CSS: Asset = asset!(
 
 #[component]
 pub fn AdminLandingPage() -> Element {
-    let navigator = use_navigator();
-
-    if !has_auth_token() {
-        navigator.replace(Route::AdminLoginPage {});
-    }
-
     rsx! {
         document::Link { rel: "stylesheet", href: LANDING_CSS }
         AdminFrame { title: "Forms".to_string(),

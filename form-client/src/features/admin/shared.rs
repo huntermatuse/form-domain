@@ -1,5 +1,5 @@
 use crate::api;
-use crate::api::http::{clear_auth_token, ApiError};
+use crate::api::http::{clear_auth_token, has_auth_token, ApiError};
 use crate::Route;
 use dioxus::document::eval;
 use dioxus::prelude::*;
@@ -8,6 +8,10 @@ use manganis::asset;
 #[component]
 pub fn AdminFrame(title: String, children: Element) -> Element {
     let navigator = use_navigator();
+
+    if !has_auth_token() {
+        navigator.replace(Route::AdminLoginPage {});
+    }
     let home_nav = navigator.clone();
     let forms_nav = navigator.clone();
     let new_nav = navigator.clone();

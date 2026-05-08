@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 #[component]
 pub fn AdminFormDetailPage(form_id: String, version: i32) -> Element {
+    let navigator = use_navigator();
     let detail_refresh = use_signal(|| 0_u32);
     let tokens_refresh = use_signal(|| 0_u32);
     let submissions_refresh = use_signal(|| 0_u32);
@@ -37,7 +38,6 @@ pub fn AdminFormDetailPage(form_id: String, version: i32) -> Element {
             async move { api::admin::fetch_submissions(&form_id, version).await }
         }
     });
-    let navigator = use_navigator();
     let submissions_navigator = navigator.clone();
     let submissions_form_id = form_id.clone();
     let mut share_notes = use_signal(String::new);
