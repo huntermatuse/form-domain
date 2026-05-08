@@ -447,10 +447,10 @@ fn parse_submission_timestamp(value: &str) -> Result<DateTime<Utc>, Error> {
 }
 
 fn midnight_utc(date: NaiveDate, original_value: &str) -> Result<DateTime<Utc>, Error> {
-        let datetime = date
-            .and_hms_opt(0, 0, 0)
-            .ok_or_else(|| anyhow::anyhow!("could not build midnight timestamp for {original_value}"))?;
-        Ok(Utc.from_utc_datetime(&datetime))
+    let datetime = date.and_hms_opt(0, 0, 0).ok_or_else(|| {
+        anyhow::anyhow!("could not build midnight timestamp for {original_value}")
+    })?;
+    Ok(Utc.from_utc_datetime(&datetime))
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

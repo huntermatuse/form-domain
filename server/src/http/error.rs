@@ -108,7 +108,9 @@ impl IntoResponse for Error {
                 )
                     .into_response();
             }
-            Self::Sqlx(sqlx::Error::Database(ref dbe)) if dbe.code().as_deref() == Some("42P01") => {
+            Self::Sqlx(sqlx::Error::Database(ref dbe))
+                if dbe.code().as_deref() == Some("42P01") =>
+            {
                 tracing::error!("database schema is not initialized: {:?}", dbe);
                 return (
                     StatusCode::SERVICE_UNAVAILABLE,

@@ -51,7 +51,10 @@ pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
 fn api_router() -> Router {
     Router::new()
         .route("/api/v1/status", get(status_handler))
-        .route("/api/development/versioning/info", get(version_info_handler))
+        .route(
+            "/api/development/versioning/info",
+            get(version_info_handler),
+        )
         .merge(admin::router())
         .merge(public::router())
 }

@@ -13,7 +13,10 @@ use uuid::Uuid;
 
 pub fn router() -> Router {
     Router::new()
-        .route("/api/v1/admin/forms", get(list_forms_handler).post(create_form_handler))
+        .route(
+            "/api/v1/admin/forms",
+            get(list_forms_handler).post(create_form_handler),
+        )
         .route(
             "/api/v1/admin/forms/{form_id}/versions/{version}",
             get(get_form_handler),
@@ -316,7 +319,11 @@ async fn get_submission_handler(
     Ok(Json(completed_form_from_row(row)?))
 }
 
-async fn load_form_detail(ctx: &ApiContext, form_id: Uuid, version: i32) -> Result<FormDetail, Error> {
+async fn load_form_detail(
+    ctx: &ApiContext,
+    form_id: Uuid,
+    version: i32,
+) -> Result<FormDetail, Error> {
     let row = sqlx::query_as::<_, FormDetailRow>(
         r#"
         select form_id, version, title, description_markdown, active,
@@ -402,7 +409,9 @@ fn completed_form_from_row(row: CompletedFormRow) -> Result<CompletedForm, Error
             meta: FormMeta {
                 created_at: row.form_created_at.to_rfc3339(),
                 created_by: row.form_created_by,
-                updated_at: row.form_updated_at.map(|updated_at| updated_at.to_rfc3339()),
+                updated_at: row
+                    .form_updated_at
+                    .map(|updated_at| updated_at.to_rfc3339()),
                 updated_by: row.form_updated_by,
             },
             sections: row.form_section.0,
@@ -439,11 +448,7 @@ fn token_hash(token: Uuid) -> String {
 fn empty_string_as_none(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let value = value.trim().to_string();
-        if value.is_empty() {
-            None
-        } else {
-            Some(value)
-        }
+        if value.is_empty() { None } else { Some(value) }
     })
 }
 

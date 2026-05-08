@@ -100,9 +100,7 @@ fn sign_admin_token(ctx: &ApiContext) -> String {
 
 fn verify_admin_token(ctx: &ApiContext, token: &str) -> Result<(), Error> {
     let (expires_at, signature) = token.split_once('.').ok_or(Error::Unauthorized)?;
-    let expires_at = expires_at
-        .parse::<i64>()
-        .map_err(|_| Error::Unauthorized)?;
+    let expires_at = expires_at.parse::<i64>().map_err(|_| Error::Unauthorized)?;
     let expires_at = Utc
         .timestamp_opt(expires_at, 0)
         .single()
