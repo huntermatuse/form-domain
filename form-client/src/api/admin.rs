@@ -78,6 +78,30 @@ pub struct CreateShareTokenResponse {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateViewerTokenRequest {
+    pub expires_at: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ViewerTokenItem {
+    pub viewer_token_id: String,
+    pub token_prefix: Option<String>,
+    pub completed_form_id: String,
+    pub active: bool,
+    pub expires_at: Option<String>,
+    pub created_at: String,
+    pub created_by: String,
+    pub updated_at: Option<String>,
+    pub updated_by: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateViewerTokenResponse {
+    pub token: String,
+    pub viewer_token: ViewerTokenItem,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubmissionListItem {
     pub completed_form_id: String,
     pub company_name: String,
@@ -107,15 +131,25 @@ pub async fn fetch_forms() -> ApiResult<Vec<FormListItem>> {
     authed_get("/api/v1/admin/forms").await
 }
 
+pub async fn check_form_title_available(title: &str) -> ApiResult<bool> {
+    #[derive(serde::Deserialize)]
+    struct Resp {
+        available: bool,
+    }
+    let encoded = js_sys::encode_uri_component(title)
+        .as_string()
+        .unwrap_or_default();
+    let resp: Resp =
+        authed_get(&format!("/api/v1/admin/forms/check-title?title={encoded}")).await?;
+    Ok(resp.available)
+}
+
 pub async fn create_form(req: &CreateFormRequest) -> ApiResult<FormDetail> {
     authed_post("/api/v1/admin/forms", req).await
 }
 
 pub async fn fetch_form(form_id: &str, version: i32) -> ApiResult<FormDetail> {
-    authed_get(&format!(
-        "/api/v1/admin/forms/{form_id}/versions/{version}"
-    ))
-    .await
+    authed_get(&format!("/api/v1/admin/forms/{form_id}/versions/{version}")).await
 }
 
 pub async fn set_form_active(form_id: &str, version: i32, active: bool) -> ApiResult<FormDetail> {
@@ -152,10 +186,32 @@ pub async fn deactivate_share_token(share_token_id: &str) -> ApiResult<()> {
     .await
 }
 
-pub async fn fetch_submissions(
-    form_id: &str,
-    version: i32,
-) -> ApiResult<Vec<SubmissionListItem>> {
+pub async fn fetch_viewer_tokens(completed_form_id: &str) -> ApiResult<Vec<ViewerTokenItem>> {
+    authed_get(&format!(
+        "/api/v1/admin/submissions/{completed_form_id}/viewer-tokens"
+    ))
+    .await
+}
+
+pub async fn create_viewer_token(
+    completed_form_id: &str,
+    req: &CreateViewerTokenRequest,
+) -> ApiResult<CreateViewerTokenResponse> {
+    authed_post(
+        &format!("/api/v1/admin/submissions/{completed_form_id}/viewer-tokens"),
+        req,
+    )
+    .await
+}
+
+pub async fn deactivate_viewer_token(viewer_token_id: &str) -> ApiResult<()> {
+    authed_post_empty_response(&format!(
+        "/api/v1/admin/viewer-tokens/{viewer_token_id}/deactivate"
+    ))
+    .await
+}
+
+pub async fn fetch_submissions(form_id: &str, version: i32) -> ApiResult<Vec<SubmissionListItem>> {
     authed_get(&format!(
         "/api/v1/admin/forms/{form_id}/versions/{version}/submissions"
     ))
@@ -163,8 +219,5 @@ pub async fn fetch_submissions(
 }
 
 pub async fn fetch_submission(completed_form_id: &str) -> ApiResult<CompletedForm> {
-    authed_get(&format!(
-        "/api/v1/admin/submissions/{completed_form_id}"
-    ))
-    .await
+    authed_get(&format!("/api/v1/admin/submissions/{completed_form_id}")).await
 }

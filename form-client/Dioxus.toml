@@ -5,7 +5,7 @@ index_html = "index.html"
 [web.app]
 
 # HTML title tag content
-title = "form-client"
+title = "Form Client"
 
 # include `assets` in web platform
 [web.resource]

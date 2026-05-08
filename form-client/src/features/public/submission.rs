@@ -332,6 +332,154 @@ button{
   color:var(--muted);
 }
 
+.field__readonly{
+  background:#f3f4f6;
+  color:#6b7280;
+  cursor:default;
+  pointer-events:none;
+}
+
+input[type='email'],
+input[type='tel'],
+input[type='number']{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  font:inherit;
+  background:#fff;
+}
+
+input[type='email']:focus,
+input[type='tel']:focus,
+input[type='number']:focus{
+  outline:3px solid rgba(29,78,216,.18);
+  border-color:var(--accent);
+}
+
+select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  font:inherit;
+  background:#fff;
+  cursor:pointer;
+  appearance:auto;
+}
+
+select:focus{
+  outline:3px solid rgba(29,78,216,.18);
+  border-color:var(--accent);
+}
+
+select[multiple]{
+  min-height:120px;
+  padding:6px;
+}
+
+.dropdown-multi-list{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-top:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.dropdown-multi-list__item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  font-weight:600;
+  cursor:pointer;
+  border-bottom:1px solid var(--line);
+}
+
+.dropdown-multi-list__item:last-child{
+  border-bottom:none;
+}
+
+.dropdown-multi-list__item:hover{
+  background:#f0f9ff;
+}
+
+.ranked-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:10px;
+}
+
+.ranked-list__item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  background:#f9fafb;
+  border:1px solid var(--line);
+  border-radius:10px;
+  cursor:grab;
+  user-select:none;
+  transition:border-color .15s ease, background .15s ease, opacity .15s ease, transform .15s ease;
+}
+
+.ranked-list__item:active{
+  cursor:grabbing;
+}
+
+.ranked-list__item--dragging{
+  opacity:.58;
+  border-style:dashed;
+  transform:scale(.995);
+}
+
+.ranked-list__item--drop-target{
+  background:#eff6ff;
+  border-color:#2563eb;
+}
+
+.ranked-list__rank{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#dbeafe;
+  color:#1d4ed8;
+  font-size:.78rem;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+
+.ranked-list__label{
+  flex:1;
+  font-weight:600;
+}
+
+.ranked-list__controls{
+  display:flex;
+  gap:4px;
+}
+
+.ranked-list__btn{
+  background:#e5e7eb;
+  color:#374151;
+  border-radius:6px;
+  padding:3px 9px;
+  font-size:.85rem;
+  border:none;
+  cursor:pointer;
+}
+
+.ranked-list__btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+
 @media print{
   .toolbar,
   .form-actions,
@@ -358,153 +506,151 @@ pub fn PlasmaRfiPage(token: String) -> Element {
     let close_window_note = use_signal(|| None::<String>);
 
     rsx! {
-        style { "{PAGE_CSS}" }
+      style { "{PAGE_CSS}" }
 
-        div { class: "wrap",
-            if *token_unavailable.read() {
-                {token_unavailable_page()}
-            } else {
-                if let Some(error) = submit_error.read().as_ref() {
-                    div { class: "submitted-notice submitted-notice--error",
-                        p { "{error}" }
-                    }
-                }
-
-                match &*form_resource.read() {
-                    Some(Ok(form)) => rsx! {
-                        Toolbar {
-                            title: form.title.clone(),
-                        }
-
-                        FormSubmissionRenderer {
-                            form: form.clone(),
-                            is_submitting: *is_submitting.read(),
-                            on_submit: {
-                                let token = token.clone();
-                                move |completed_form: CompletedForm| {
-                                    if *is_submitting.read() || *show_success.read() {
-                                        return;
-                                    }
-
-                                    is_submitting.set(true);
-                                    submit_error.set(None);
-
-                                    let token = token.clone();
-                                    spawn(async move {
-                                        match submit_completed_form(&token, &completed_form).await {
-                                            Ok(()) => {
-                                                token_unavailable.set(false);
-                                                show_success.set(true);
-                                            }
-                                            Err(error)
-                                                if is_public_token_error(&error)
-                                                    && !*show_success.read() =>
-                                            {
-                                                token_unavailable.set(true);
-                                            }
-                                            Err(error) => {
-                                                if !*show_success.read() {
-                                                    submit_error.set(Some(error.to_string()));
-                                                }
-                                            }
-                                        }
-
-                                        is_submitting.set(false);
-                                    });
-                                }
-                            },
-                        }
-
-                        if *show_success.read() {
-                            SubmissionSuccessModal {
-                                close_window_note,
-                            }
-                        }
-                    },
-                    Some(Err(error)) if is_public_token_error(error) => rsx! {
-                        {token_unavailable_page()}
-                    },
-                    Some(Err(error)) => rsx! {
-                        div { class: "submitted-notice submitted-notice--error",
-                            p { "{error}" }
-                        }
-                    },
-                    None => rsx! {
-                        div { class: "submitted-notice",
-                            p { "Loading form..." }
-                        }
-                    }
-                }
+      div { class: "wrap",
+        if *token_unavailable.read() {
+          {token_unavailable_page()}
+        } else {
+          if let Some(error) = submit_error.read().as_ref() {
+            div { class: "submitted-notice submitted-notice--error",
+              p { "{error}" }
             }
+          }
+
+          match &*form_resource.read() {
+              Some(Ok(form)) => rsx! {
+                Toolbar { title: form.title.clone() }
+
+                FormSubmissionRenderer {
+                  form: form.clone(),
+                  is_submitting: *is_submitting.read(),
+                  on_submit: {
+                      let token = token.clone();
+                      move |completed_form: CompletedForm| {
+                          if *is_submitting.read() || *show_success.read() {
+                              return;
+                          }
+
+                          is_submitting.set(true);
+                          submit_error.set(None);
+
+                          let token = token.clone();
+                          spawn(async move {
+                              match submit_completed_form(&token, &completed_form).await {
+                                  Ok(()) => {
+                                      token_unavailable.set(false);
+                                      show_success.set(true);
+                                  }
+                                  Err(
+                                      error,
+                                  ) if is_public_token_error(&error) && !*show_success.read() => {
+                                      token_unavailable.set(true);
+                                  }
+                                  Err(error) => {
+                                      if !*show_success.read() {
+                                          submit_error.set(Some(error.to_string()));
+                                      }
+                                  }
+                              }
+
+                              is_submitting.set(false);
+                          });
+                      }
+                  },
+                }
+
+                if *show_success.read() {
+                  SubmissionSuccessModal { close_window_note }
+                }
+              },
+              Some(Err(error)) if is_public_token_error(error) => rsx! {
+                {token_unavailable_page()}
+              },
+              Some(Err(error)) => rsx! {
+                div { class: "submitted-notice submitted-notice--error",
+                  p { "{error}" }
+                }
+              },
+              None => rsx! {
+                div { class: "submitted-notice",
+                  p { "Loading form..." }
+                }
+              },
+          }
         }
+      }
     }
 }
 
 #[component]
 fn SubmissionSuccessModal(close_window_note: Signal<Option<String>>) -> Element {
     rsx! {
-        div {
-            class: "submit-success-modal",
-            role: "dialog",
-            aria_modal: "true",
-            aria_label: "Form submitted",
+      div {
+        class: "submit-success-modal",
+        role: "dialog",
+        aria_modal: "true",
+        aria_label: "Form submitted",
 
-            div { class: "submit-success-modal__panel",
-                h2 { "Your response has been submitted." }
-                p { "You can download or print a PDF copy of this page before closing the window." }
+        div { class: "submit-success-modal__panel",
+          h2 { "Your response has been submitted." }
+          p { "You can download or print a PDF copy of this page before closing the window." }
 
-                div { class: "submit-success-modal__actions",
-                    button {
-                        class: "btn-secondary",
-                        r#type: "button",
-                        onclick: move |_| {
-                            print_page();
-                        },
-                        "Download / Print PDF"
-                    }
-
-                    button {
-                        class: "btn-primary",
-                        r#type: "button",
-                        onclick: move |_| {
-                            close_window();
-                            close_window_note.set(Some(
-                                "If the window did not close automatically, you can safely close this tab."
-                                    .to_string(),
-                            ));
-                        },
-                        "Close Window"
-                    }
-                }
-
-                if let Some(note) = close_window_note.read().as_ref() {
-                    p { class: "close-window-note", "{note}" }
-                }
+          div { class: "submit-success-modal__actions",
+            button {
+              class: "btn-secondary",
+              r#type: "button",
+              onclick: move |_| {
+                  print_page();
+              },
+              "Download / Print PDF"
             }
+
+            button {
+              class: "btn-primary",
+              r#type: "button",
+              onclick: move |_| {
+                  close_window();
+                  close_window_note
+                      .set(
+                          Some(
+                              "If the window did not close automatically, you can safely close this tab."
+                                  .to_string(),
+                          ),
+                      );
+              },
+              "Close Window"
+            }
+          }
+
+          if let Some(note) = close_window_note.read().as_ref() {
+            p { class: "close-window-note", "{note}" }
+          }
         }
+      }
     }
 }
 
 #[component]
 fn Toolbar(title: String) -> Element {
     rsx! {
-        div { class: "toolbar",
-            div { class: "toolbar-inner",
-                div {
-                    strong { "{title}" }
-                }
+      div { class: "toolbar",
+        div { class: "toolbar-inner",
+          div {
+            strong { "{title}" }
+          }
 
-                div { class: "toolbar-actions",
-                    button {
-                        class: "btn-secondary",
-                        onclick: move |_| {
-                            print_page();
-                        },
-                        "Download / Print PDF"
-                    }
-                }
-            }
+        // div { class: "toolbar-actions",
+        //     button {
+        //         class: "btn-secondary",
+        //         onclick: move |_| {
+        //             print_page();
+        //         },
+        //         "Download / Print PDF"
+        //     }
+        // }
         }
+      }
     }
 }
 

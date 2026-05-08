@@ -28,9 +28,7 @@ pub fn HomePage() -> Element {
 
     rsx! {
         main { class: "home-shell",
-            section { class: "home-brand-panel", aria_label: "Forms home",
-
-            }
+            section { class: "home-brand-panel", aria_label: "Forms home" }
 
             section { class: "home-action-panel", aria_label: "Open a form link",
                 match selected_mode {
@@ -73,16 +71,15 @@ pub fn HomePage() -> Element {
                                         navigator.push(Route::PlasmaRfiPage { token });
                                     }
                                     Some(TokenMode::Viewer) => {
-                                        navigator.push(Route::PublicCompletedFormViewerPage { token });
+                                        navigator
+                                            .push(Route::PublicCompletedFormViewerPage {
+                                                token,
+                                            });
                                     }
                                     None => {}
                                 }
                             },
-                            label {
-                                class: "home-token-label",
-                                r#for: "home-token",
-                                "{selected_mode.label()} token"
-                            }
+                            label { class: "home-token-label", r#for: "home-token", "{selected_mode.label()} token" }
                             input {
                                 id: "home-token",
                                 class: "home-token-input",
@@ -91,7 +88,7 @@ pub fn HomePage() -> Element {
                                 spellcheck: "false",
                                 placeholder: "paste token here",
                                 value: "{token}",
-                                oninput: move |event| token.set(event.value())
+                                oninput: move |event| token.set(event.value()),
                             }
                             div { class: "home-token-actions",
                                 button {
@@ -111,7 +108,7 @@ pub fn HomePage() -> Element {
                                 }
                             }
                         }
-                    }
+                    },
                 }
             }
         }

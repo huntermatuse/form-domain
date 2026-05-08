@@ -1,6 +1,6 @@
 use crate::features::admin::{
-    AdminFormBuilderPage, AdminFormDetailPage, AdminFormListPage, AdminLandingPage,
-    AdminLoginPage, AdminSubmissionDetailPage, AdminSubmissionListPage,
+    AdminFormBuilderPage, AdminFormDetailPage, AdminFormListPage, AdminLandingPage, AdminLoginPage,
+    AdminSubmissionDetailPage, AdminSubmissionListPage,
 };
 use crate::features::development::ClientVersionInfoPage;
 use crate::features::home::HomePage;

@@ -21,7 +21,21 @@ pub fn FormSubmissionRenderer(
     is_submitting: bool,
     on_submit: Option<EventHandler<CompletedForm>>,
 ) -> Element {
-    let draft = use_signal(SubmissionDraft::default);
+    let draft = use_signal(|| {
+        let today = {
+            let d = js_sys::Date::new_0();
+            format!(
+                "{:04}-{:02}-{:02}",
+                d.get_full_year(),
+                d.get_month() + 1,
+                d.get_date()
+            )
+        };
+        SubmissionDraft {
+            submitted_at: today,
+            ..Default::default()
+        }
+    });
     let mut missing_required = use_signal(Vec::<MissingRequiredQuestion>::new);
 
     rsx! {
@@ -30,9 +44,7 @@ pub fn FormSubmissionRenderer(
                 h1 { "{form.title}" }
 
                 if let Some(description) = &form.description_markdown {
-                    MarkdownDescription {
-                        markdown: description.clone(),
-                    }
+                    MarkdownDescription { markdown: description.clone() }
                 }
             }
 
@@ -49,16 +61,12 @@ pub fn FormSubmissionRenderer(
             }
 
             for section in form.sections.iter() {
-                section {
-                    key: "{section.section_id}",
-                    class: "form-section",
+                section { key: "{section.section_id}", class: "form-section",
 
                     h2 { "{section.number}. {section.title}" }
 
                     if let Some(description) = &section.description_markdown {
-                        MarkdownDescription {
-                            markdown: description.clone(),
-                        }
+                        MarkdownDescription { markdown: description.clone() }
                     }
 
                     for question in section.questions.iter() {
@@ -75,9 +83,7 @@ pub fn FormSubmissionRenderer(
                 }
             }
 
-            SubmissionFields {
-                draft,
-            }
+            SubmissionFields { draft }
 
             div { class: "form-actions",
                 button {
@@ -127,9 +133,7 @@ fn QuestionInput(
     };
 
     rsx! {
-        div {
-            class: "{question_class}",
-            id: "question-{question.question_id}",
+        div { class: "{question_class}", id: "question-{question.question_id}",
 
             div { class: "form-question__heading",
                 h3 { "{question.number}. {question.title}" }
@@ -144,18 +148,16 @@ fn QuestionInput(
             }
 
             match &question.kind {
-                QuestionKind::Validation {
-                    description_markdown,
-                    confirm_prompt,
-                    ..
-                } => rsx! {
-                    ValidationQuestionInput {
-                        question_id: question.question_id.clone(),
-                        description_markdown: description_markdown.clone(),
-                        confirm_prompt: confirm_prompt.clone(),
-                        draft,
+                QuestionKind::Validation { description_markdown, confirm_prompt, .. } => {
+                    rsx! {
+                        ValidationQuestionInput {
+                            question_id: question.question_id.clone(),
+                            description_markdown: description_markdown.clone(),
+                            confirm_prompt: confirm_prompt.clone(),
+                            draft,
+                        }
                     }
-                },
+                }
                 QuestionKind::Text {
                     description_markdown,
                     placeholder,
@@ -171,19 +173,17 @@ fn QuestionInput(
                         draft,
                     }
                 },
-                QuestionKind::Choice {
-                    description_markdown,
-                    options,
-                    allow_comment,
-                } => rsx! {
-                    ChoiceQuestionInput {
-                        question_id: question.question_id.clone(),
-                        description_markdown: description_markdown.clone(),
-                        options: options.clone(),
-                        allow_comment: *allow_comment,
-                        draft,
+                QuestionKind::Choice { description_markdown, options, allow_comment } => {
+                    rsx! {
+                        ChoiceQuestionInput {
+                            question_id: question.question_id.clone(),
+                            description_markdown: description_markdown.clone(),
+                            options: options.clone(),
+                            allow_comment: *allow_comment,
+                            draft,
+                        }
                     }
-                },
+                }
                 QuestionKind::MultiChoice {
                     description_markdown,
                     options,
@@ -198,6 +198,87 @@ fn QuestionInput(
                         allow_comment: *allow_comment,
                         draft,
                     }
+                },
+                QuestionKind::Email { description_markdown, placeholder } => rsx! {
+                    SimpleTextInput {
+                        question_id: question.question_id.clone(),
+                        description_markdown: description_markdown.clone(),
+                        placeholder: placeholder.clone(),
+                        input_type: "email",
+                        draft,
+                    }
+                },
+                QuestionKind::Phone { description_markdown, placeholder } => rsx! {
+                    SimpleTextInput {
+                        question_id: question.question_id.clone(),
+                        description_markdown: description_markdown.clone(),
+                        placeholder: placeholder.clone(),
+                        input_type: "tel",
+                        draft,
+                    }
+                },
+                QuestionKind::Date { description_markdown } => rsx! {
+                    SimpleTextInput {
+                        question_id: question.question_id.clone(),
+                        description_markdown: description_markdown.clone(),
+                        placeholder: None,
+                        input_type: "date",
+                        draft,
+                    }
+                },
+                QuestionKind::Number { description_markdown, placeholder, min, max } => {
+                    rsx! {
+                        NumberQuestionInput {
+                            question_id: question.question_id.clone(),
+                            description_markdown: description_markdown.clone(),
+                            placeholder: placeholder.clone(),
+                            min: *min,
+                            max: *max,
+                            draft,
+                        }
+                    }
+                }
+                QuestionKind::Dropdown { description_markdown, options, allow_comment } => {
+                    rsx! {
+                        DropdownQuestionInput {
+                            question_id: question.question_id.clone(),
+                            description_markdown: description_markdown.clone(),
+                            options: options.clone(),
+                            allow_comment: *allow_comment,
+                            draft,
+                        }
+                    }
+                }
+                QuestionKind::MultiDropdown {
+                    description_markdown,
+                    options,
+                    min_selected: _,
+                    max_selected: _,
+                    allow_comment,
+                } => rsx! {
+                    MultiDropdownQuestionInput {
+                        question_id: question.question_id.clone(),
+                        description_markdown: description_markdown.clone(),
+                        options: options.clone(),
+                        allow_comment: *allow_comment,
+                        draft,
+                    }
+                },
+                QuestionKind::RankedList {
+                    description_markdown,
+                    options,
+                    randomize_initial_order,
+                } => rsx! {
+                    RankedListQuestionInput {
+                        question_id: question.question_id.clone(),
+                        description_markdown: description_markdown.clone(),
+                        options: options.clone(),
+                        randomize_initial_order: *randomize_initial_order,
+                        draft,
+                    }
+                },
+                QuestionKind::ContentBlock { content_markdown } => rsx! {
+                    MarkdownDescription { markdown: content_markdown.clone() }
                 },
             }
         }
@@ -222,9 +303,7 @@ fn ValidationQuestionInput(
     };
 
     rsx! {
-        MarkdownDescription {
-            markdown: description_markdown,
-        }
+        MarkdownDescription { markdown: description_markdown }
 
         div { class: "form-question__prompt",
             strong { "Please confirm:" }
@@ -242,7 +321,6 @@ fn ValidationQuestionInput(
                         move |_| {
                             let comment =
                                 current_validation_comment(&draft.read().responses, &question_id);
-
                             set_validation_response(
                                 draft,
                                 question_id.clone(),
@@ -266,7 +344,6 @@ fn ValidationQuestionInput(
                         move |_| {
                             let comment =
                                 current_validation_comment(&draft.read().responses, &question_id);
-
                             set_validation_response(
                                 draft,
                                 question_id.clone(),
@@ -287,8 +364,10 @@ fn ValidationQuestionInput(
             oninput: {
                 let question_id = question_id.clone();
                 move |event| {
-                    let status = current_validation_status(&draft.read().responses, &question_id);
-
+                    let status = current_validation_status(
+                        &draft.read().responses,
+                        &question_id,
+                    );
                     if let Some(status) = status {
                         set_validation_response(
                             draft,
@@ -322,9 +401,7 @@ fn TextQuestionInput(
 
     rsx! {
         if let Some(description_markdown) = description_markdown {
-            MarkdownDescription {
-                markdown: description_markdown,
-            }
+            MarkdownDescription { markdown: description_markdown }
         }
 
         if multiline {
@@ -384,9 +461,7 @@ fn ChoiceQuestionInput(
 
     rsx! {
         if let Some(description_markdown) = description_markdown {
-            MarkdownDescription {
-                markdown: description_markdown,
-            }
+            MarkdownDescription { markdown: description_markdown }
         }
 
         div { class: "choice-list",
@@ -432,7 +507,6 @@ fn ChoiceQuestionInput(
                     move |event| {
                         let selected_option_id =
                             current_choice_option(&draft.read().responses, &question_id);
-
                         if let Some(selected_option_id) = selected_option_id {
                             upsert_response(
                                 draft,
@@ -473,9 +547,7 @@ fn MultiChoiceQuestionInput(
 
     rsx! {
         if let Some(description_markdown) = description_markdown {
-            MarkdownDescription {
-                markdown: description_markdown,
-            }
+            MarkdownDescription { markdown: description_markdown }
         }
 
         div { class: "choice-list",
@@ -511,7 +583,6 @@ fn MultiChoiceQuestionInput(
                         let selected_option_ids =
                             current_multi_choice_options(&draft.read().responses, &question_id);
                         let comment = empty_string_as_none(event.value());
-
                         upsert_response(
                             draft,
                             question_id.clone(),
@@ -524,6 +595,496 @@ fn MultiChoiceQuestionInput(
                 },
             }
         }
+    }
+}
+
+#[component]
+fn SimpleTextInput(
+    question_id: String,
+    description_markdown: Option<String>,
+    placeholder: Option<String>,
+    input_type: &'static str,
+    draft: Signal<SubmissionDraft>,
+) -> Element {
+    let value = match response_for(&draft.read().responses, &question_id)
+        .map(|response| &response.response)
+    {
+        Some(Response::Text { value }) => value.clone(),
+        _ => String::new(),
+    };
+    let placeholder = placeholder.unwrap_or_default();
+
+    rsx! {
+        if let Some(md) = description_markdown {
+            MarkdownDescription { markdown: md }
+        }
+        input {
+            r#type: "{input_type}",
+            placeholder: "{placeholder}",
+            value: "{value}",
+            oninput: move |event| {
+                upsert_response(
+                    draft,
+                    question_id.clone(),
+                    Response::Text {
+                        value: event.value(),
+                    },
+                );
+            },
+        }
+    }
+}
+
+#[component]
+fn NumberQuestionInput(
+    question_id: String,
+    description_markdown: Option<String>,
+    placeholder: Option<String>,
+    min: Option<f64>,
+    max: Option<f64>,
+    draft: Signal<SubmissionDraft>,
+) -> Element {
+    let value = match response_for(&draft.read().responses, &question_id)
+        .map(|response| &response.response)
+    {
+        Some(Response::Text { value }) => value.clone(),
+        _ => String::new(),
+    };
+    let placeholder = placeholder.unwrap_or_default();
+
+    rsx! {
+        if let Some(md) = description_markdown {
+            MarkdownDescription { markdown: md }
+        }
+        input {
+            r#type: "number",
+            placeholder: "{placeholder}",
+            value: "{value}",
+            min: min.map(|v| v.to_string()),
+            max: max.map(|v| v.to_string()),
+            oninput: move |event| {
+                upsert_response(
+                    draft,
+                    question_id.clone(),
+                    Response::Text {
+                        value: event.value(),
+                    },
+                );
+            },
+        }
+    }
+}
+
+#[component]
+fn DropdownQuestionInput(
+    question_id: String,
+    description_markdown: Option<String>,
+    options: Vec<QuestionOption>,
+    allow_comment: bool,
+    draft: Signal<SubmissionDraft>,
+) -> Element {
+    let current = response_for(&draft.read().responses, &question_id).cloned();
+    let selected_option_id = match current.as_ref().map(|r| &r.response) {
+        Some(Response::Choice {
+            selected_option_id, ..
+        }) => Some(selected_option_id.clone()),
+        _ => None,
+    };
+    let comment = match current.as_ref().map(|r| &r.response) {
+        Some(Response::Choice { comment, .. }) => comment.clone().unwrap_or_default(),
+        _ => String::new(),
+    };
+
+    rsx! {
+        if let Some(md) = description_markdown {
+            MarkdownDescription { markdown: md }
+        }
+        select {
+            onchange: {
+                let question_id = question_id.clone();
+                move |event: Event<FormData>| {
+                    let val = event.value();
+                    if val.is_empty() {
+                        return;
+                    }
+                    let comment = current_choice_comment(&draft.read().responses, &question_id);
+                    upsert_response(
+                        draft,
+                        question_id.clone(),
+                        Response::Choice {
+                            selected_option_id: val,
+                            comment,
+                        },
+                    );
+                }
+            },
+            option { value: "", "— Select —" }
+            for option in options.iter() {
+                option {
+                    key: "{option.question_option_id}",
+                    value: "{option.question_option_id}",
+                    selected: selected_option_id.as_deref() == Some(option.question_option_id.as_str()),
+                    "{option.label}"
+                }
+            }
+        }
+        if allow_comment {
+            textarea {
+                placeholder: "Comment",
+                value: "{comment}",
+                oninput: {
+                    let question_id = question_id.clone();
+                    move |event| {
+                        let selected_option_id = current_choice_option(
+                            &draft.read().responses,
+                            &question_id,
+                        );
+                        if let Some(selected_option_id) = selected_option_id {
+                            upsert_response(
+                                draft,
+                                question_id.clone(),
+                                Response::Choice {
+                                    selected_option_id,
+                                    comment: empty_string_as_none(event.value()),
+                                },
+                            );
+                        }
+                    }
+                },
+            }
+        }
+    }
+}
+
+#[component]
+fn MultiDropdownQuestionInput(
+    question_id: String,
+    description_markdown: Option<String>,
+    options: Vec<QuestionOption>,
+    allow_comment: bool,
+    draft: Signal<SubmissionDraft>,
+) -> Element {
+    let current = response_for(&draft.read().responses, &question_id).cloned();
+    let selected_option_ids = match current.as_ref().map(|r| &r.response) {
+        Some(Response::MultiChoice {
+            selected_option_ids,
+            ..
+        }) => selected_option_ids.clone(),
+        _ => Vec::new(),
+    };
+    let comment = match current.as_ref().map(|r| &r.response) {
+        Some(Response::MultiChoice { comment, .. }) => comment.clone().unwrap_or_default(),
+        _ => String::new(),
+    };
+
+    rsx! {
+        if let Some(md) = description_markdown {
+            MarkdownDescription { markdown: md }
+        }
+        div { class: "dropdown-multi-list",
+            for option in options.iter() {
+                label {
+                    key: "{option.question_option_id}",
+                    class: "dropdown-multi-list__item",
+                    title: option.description.clone().unwrap_or_default(),
+
+                    input {
+                        r#type: "checkbox",
+                        checked: selected_option_ids.contains(&option.question_option_id),
+                        onchange: {
+                            let question_id = question_id.clone();
+                            let option_id = option.question_option_id.clone();
+                            move |_| {
+                                toggle_multi_choice_response(
+                                    draft,
+                                    question_id.clone(),
+                                    option_id.clone(),
+                                );
+                            }
+                        },
+                    }
+
+                    "{option.label}"
+                }
+            }
+        }
+        if allow_comment {
+            textarea {
+                placeholder: "Comment",
+                value: "{comment}",
+                oninput: {
+                    let question_id = question_id.clone();
+                    move |event| {
+                        let selected_option_ids = current_multi_choice_options(
+                            &draft.read().responses,
+                            &question_id,
+                        );
+                        upsert_response(
+                            draft,
+                            question_id.clone(),
+                            Response::MultiChoice {
+                                selected_option_ids,
+                                comment: empty_string_as_none(event.value()),
+                            },
+                        );
+                    }
+                },
+            }
+        }
+    }
+}
+
+#[component]
+fn RankedListQuestionInput(
+    question_id: String,
+    description_markdown: Option<String>,
+    options: Vec<QuestionOption>,
+    randomize_initial_order: bool,
+    draft: Signal<SubmissionDraft>,
+) -> Element {
+    let initial_ranked_ids = use_signal(|| ranked_option_ids(&options, randomize_initial_order));
+    let mut dragging_option_id = use_signal(|| None::<String>);
+    let mut drag_over_option_id = use_signal(|| None::<String>);
+    let ranked_ids = match response_for(&draft.read().responses, &question_id).map(|r| &r.response)
+    {
+        Some(Response::RankedList { ranked_option_ids }) => ranked_option_ids.clone(),
+        _ => initial_ranked_ids.read().clone(),
+    };
+    let dragging_id = dragging_option_id.read().clone();
+    let drag_over_id = drag_over_option_id.read().clone();
+
+    use_effect({
+        let question_id = question_id.clone();
+        move || {
+            let has_ranked_response = matches!(
+                response_for(&draft.read().responses, &question_id)
+                    .map(|response| &response.response),
+                Some(Response::RankedList { .. })
+            );
+
+            if !has_ranked_response {
+                upsert_response(
+                    draft,
+                    question_id.clone(),
+                    Response::RankedList {
+                        ranked_option_ids: initial_ranked_ids.read().clone(),
+                    },
+                );
+            }
+        }
+    });
+
+    rsx! {
+        if let Some(md) = description_markdown {
+            MarkdownDescription { markdown: md }
+        }
+        p { class: "form-question__prompt", "Drag to reorder, or use the arrows to rank items." }
+        div { class: "ranked-list",
+            for (rank, option_id) in ranked_ids.iter().enumerate() {
+                {
+                    let label = options
+                        .iter()
+                        .find(|o| &o.question_option_id == option_id)
+                        .map(|o| o.label.clone())
+                        .unwrap_or_else(|| option_id.clone());
+                    let option_id = option_id.clone();
+                    let ranked_ids_up = ranked_ids.clone();
+                    let ranked_ids_down = ranked_ids.clone();
+                    let ranked_ids_drag = ranked_ids.clone();
+                    let question_id_up = question_id.clone();
+                    let question_id_down = question_id.clone();
+                    let question_id_drag = question_id.clone();
+                    let option_id_drag_start = option_id.clone();
+                    let option_id_drag_enter = option_id.clone();
+                    let option_id_drag_over = option_id.clone();
+                    let option_id_drag_leave = option_id.clone();
+                    let is_dragging = dragging_id.as_deref() == Some(option_id.as_str());
+                    let is_drop_target = !is_dragging
+                        && drag_over_id.as_deref() == Some(option_id.as_str());
+                    let item_class = if is_dragging {
+                        "ranked-list__item ranked-list__item--dragging"
+                    } else if is_drop_target {
+                        "ranked-list__item ranked-list__item--drop-target"
+                    } else {
+                        "ranked-list__item"
+                    };
+                    rsx! {
+                        div {
+                            key: "{option_id}",
+                            class: "{item_class}",
+                            draggable: "true",
+                            aria_grabbed: if is_dragging { "true" } else { "false" },
+                            ondragstart: move |event| {
+                                let transfer = event.data().data_transfer();
+                                let _ = transfer.set_data("text/plain", &option_id_drag_start);
+                                transfer.set_effect_allowed("move");
+                                dragging_option_id.set(Some(option_id_drag_start.clone()));
+                            },
+                            ondragenter: move |event| {
+                                event.prevent_default();
+                                drag_over_option_id.set(Some(option_id_drag_enter.clone()));
+
+                                let Some(dragged_option_id) = dragging_option_id.read().clone() else {
+                                    return;
+                                };
+
+                                let reordered_ids = reorder_ranked_option_ids(
+                                    ranked_ids_drag.clone(),
+                                    &dragged_option_id,
+                                    &option_id_drag_enter,
+                                );
+
+                                if reordered_ids != ranked_ids_drag {
+                                    update_ranked_list_response(
+                                        draft,
+                                        question_id_drag.clone(),
+                                        reordered_ids,
+                                    );
+                                }
+                            },
+                            ondragover: move |event| {
+                                event.prevent_default();
+                                event.data().data_transfer().set_drop_effect("move");
+                                drag_over_option_id.set(Some(option_id_drag_over.clone()));
+                            },
+                            ondragleave: move |_| {
+                                if drag_over_option_id.read().as_deref()
+                                    == Some(option_id_drag_leave.as_str())
+                                {
+                                    drag_over_option_id.set(None);
+                                }
+                            },
+                            ondrop: move |event| {
+                                event.prevent_default();
+                                dragging_option_id.set(None);
+                                drag_over_option_id.set(None);
+                            },
+                            ondragend: move |_| {
+                                dragging_option_id.set(None);
+                                drag_over_option_id.set(None);
+                            },
+                            span { class: "ranked-list__rank", "{rank + 1}" }
+                            span { class: "ranked-list__label", "{label}" }
+                            div { class: "ranked-list__controls",
+                                button {
+                                    class: "ranked-list__btn",
+                                    r#type: "button",
+                                    disabled: rank == 0,
+                                    onclick: move |_| {
+                                        let mut ids = ranked_ids_up.clone();
+                                        ids.swap(rank, rank - 1);
+                                        update_ranked_list_response(
+                                            draft,
+                                            question_id_up.clone(),
+                                            ids,
+                                        );
+                                    },
+                                    "↑"
+                                }
+                                button {
+                                    class: "ranked-list__btn",
+                                    r#type: "button",
+                                    disabled: rank == ranked_ids.len() - 1,
+                                    onclick: move |_| {
+                                        let mut ids = ranked_ids_down.clone();
+                                        ids.swap(rank, rank + 1);
+                                        update_ranked_list_response(
+                                            draft,
+                                            question_id_down.clone(),
+                                            ids,
+                                        );
+                                    },
+                                    "↓"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn update_ranked_list_response(
+    draft: Signal<SubmissionDraft>,
+    question_id: String,
+    ranked_option_ids: Vec<String>,
+) {
+    upsert_response(
+        draft,
+        question_id,
+        Response::RankedList { ranked_option_ids },
+    );
+}
+
+fn reorder_ranked_option_ids(
+    mut ranked_ids: Vec<String>,
+    dragged_option_id: &str,
+    target_option_id: &str,
+) -> Vec<String> {
+    if dragged_option_id == target_option_id {
+        return ranked_ids;
+    }
+
+    let Some(from_index) = ranked_ids
+        .iter()
+        .position(|option_id| option_id == dragged_option_id)
+    else {
+        return ranked_ids;
+    };
+    let Some(to_index) = ranked_ids
+        .iter()
+        .position(|option_id| option_id == target_option_id)
+    else {
+        return ranked_ids;
+    };
+
+    let dragged_id = ranked_ids.remove(from_index);
+    ranked_ids.insert(to_index.min(ranked_ids.len()), dragged_id);
+    ranked_ids
+}
+
+fn ranked_option_ids(options: &[QuestionOption], randomize_initial_order: bool) -> Vec<String> {
+    let mut ids: Vec<_> = options
+        .iter()
+        .map(|option| option.question_option_id.clone())
+        .collect();
+
+    if randomize_initial_order {
+        shuffle_ranked_option_ids(&mut ids);
+    }
+
+    ids
+}
+
+fn shuffle_ranked_option_ids(ids: &mut [String]) {
+    for index in (1..ids.len()).rev() {
+        let swap_index = (js_sys::Math::random() * (index + 1) as f64).floor() as usize;
+        ids.swap(index, swap_index);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reorder_ranked_option_ids;
+
+    #[test]
+    fn reorder_ranked_option_ids_moves_items_to_target_rank() {
+        let ids = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+
+        assert_eq!(
+            reorder_ranked_option_ids(ids.clone(), "a", "c"),
+            vec!["b", "c", "a", "d"]
+        );
+        assert_eq!(
+            reorder_ranked_option_ids(ids.clone(), "d", "b"),
+            vec!["a", "d", "b", "c"]
+        );
     }
 }
 
@@ -566,14 +1127,15 @@ fn SubmissionFields(draft: Signal<SubmissionDraft>) -> Element {
                     },
                 }
 
-                TextInput {
-                    id: "submitted_at",
-                    label: "Submission date",
-                    input_type: "date",
-                    value: current.submitted_at,
-                    oninput: move |value| {
-                        draft.write().submitted_at = value;
-                    },
+                div { class: "field",
+                    label { r#for: "submitted_at", "Submission date" }
+                    input {
+                        id: "submitted_at",
+                        r#type: "date",
+                        value: "{current.submitted_at}",
+                        readonly: true,
+                        class: "field__readonly",
+                    }
                 }
             }
         }
@@ -590,10 +1152,7 @@ fn TextInput(
 ) -> Element {
     rsx! {
         div { class: "field",
-            label {
-                r#for: "{id}",
-                "{label}"
-            }
+            label { r#for: "{id}", "{label}" }
 
             input {
                 id: "{id}",
