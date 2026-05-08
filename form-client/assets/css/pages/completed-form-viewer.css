@@ -1,0 +1,184 @@
+.completed-form-viewer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.completed-form-viewer__header {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+}
+
+.completed-form-viewer__header h1 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.completed-form-submission {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+}
+
+.completed-form-submission h2 {
+    margin: 0 0 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-subdued);
+}
+
+.completed-form-submission__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 0;
+}
+
+.completed-form-detail dt {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-readonly);
+    margin-bottom: 4px;
+}
+
+.completed-form-detail dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.completed-form-section {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+}
+
+.completed-form-section > h2 {
+    margin: 0 0 16px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-section);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border-card-inner);
+}
+
+.completed-form-question {
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border-question);
+}
+
+.completed-form-question:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.completed-form-question__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.completed-form-question__heading h3 {
+    margin: 0;
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: var(--color-text-pale);
+}
+
+.completed-form-question__required {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-badge);
+    color: var(--color-accent-muted);
+}
+
+.completed-form-question__prompt {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin: 6px 0 0;
+}
+
+.completed-form-answer {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--color-bg-base);
+    border: 1px solid var(--color-border-card-inner);
+    border-radius: 7px;
+}
+
+.completed-form-answer h4 {
+    margin: 0 0 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-readonly);
+}
+
+.completed-form-answer p,
+.completed-form-answer li {
+    margin: 0;
+    font-size: 0.93rem;
+    color: var(--color-text-section);
+}
+
+.completed-form-answer ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.completed-form-answer__missing {
+    color: var(--color-text-readonly) !important;
+    font-style: italic;
+}
+
+.completed-form-answer__status {
+    font-weight: 700;
+    color: var(--color-accent-muted);
+}
+
+.completed-form-answer__meta {
+    margin-top: 8px !important;
+    font-size: 0.78rem !important;
+    color: var(--color-border-hover) !important;
+}
+
+.completed-form-answer__comment {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-border-input);
+    background: var(--color-bg-raised);
+    border-radius: 0 6px 6px 0;
+}
+
+.completed-form-answer__comment strong {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-readonly);
+    margin-bottom: 4px;
+}
+
+.completed-form-answer__comment p {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}

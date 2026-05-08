@@ -3,104 +3,7 @@ use crate::features::admin::shared::AdminFrame;
 use crate::Route;
 use dioxus::prelude::*;
 
-const LANDING_CSS: &str = r#"
-.forms-home {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100dvh - 120px);
-    padding: 40px 24px;
-    gap: 48px;
-}
-
-.forms-home__heading {
-    text-align: center;
-}
-
-.forms-kicker {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #3cc4dc;
-    margin-bottom: 10px;
-}
-
-.forms-home__heading h1 {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #f7f8fb;
-}
-
-.forms-actions {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    max-width: 900px;
-}
-
-.forms-action {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex: 1;
-    min-width: 220px;
-    max-width: 280px;
-    padding: 28px 24px 20px;
-    background: #151922;
-    border: 1px solid #2d3340;
-    border-radius: 12px;
-    color: #f7f8fb;
-    text-decoration: none;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, transform 0.12s;
-}
-
-.forms-action:hover {
-    border-color: #3cc4dc;
-    background: #1a2030;
-    transform: translateY(-2px);
-}
-
-.forms-action__icon {
-    width: 36px;
-    height: 36px;
-    color: #3cc4dc;
-    flex-shrink: 0;
-}
-
-.forms-action__label {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #f7f8fb;
-    margin-bottom: 2px;
-}
-
-.forms-action__sub {
-    font-size: 0.85rem;
-    color: #8a95a8;
-}
-
-.forms-action__cta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #3cc4dc;
-    margin-top: auto;
-    padding-top: 12px;
-    border-top: 1px solid #252d3d;
-}
-
-.arrow-icon {
-    flex-shrink: 0;
-}
-"#;
+const LANDING_CSS: Asset = asset!("/assets/css/pages/landing.css", AssetOptions::css());
 
 #[component]
 pub fn AdminLandingPage() -> Element {
@@ -111,7 +14,7 @@ pub fn AdminLandingPage() -> Element {
     }
 
     rsx! {
-        document::Style { {LANDING_CSS} }
+        document::Link { rel: "stylesheet", href: LANDING_CSS }
         AdminFrame { title: "Forms".to_string(),
             div { class: "forms-home",
                 div { class: "forms-home__heading",

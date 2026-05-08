@@ -1,0 +1,132 @@
+/* ── Design Tokens ──────────────────────────────────────────────────────────
+   Single source of truth for all design values.
+   Dark theme is the :root baseline (admin + default).
+   Light theme is applied via [data-theme="light"] on <html> (public pages).
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+
+  /* --- Background scale --- */
+  --color-bg-base:       #0f1116;  /* page background */
+  --color-bg-nav:        #0f1116;  /* nav bar */
+  --color-bg-raised:     #151922;  /* panels, modals, cards */
+  --color-bg-surface:    #111722;  /* inset cards, token cards */
+  --color-bg-deep:       #0f131b;  /* inputs, checkboxes */
+  --color-bg-sunken:     #10141c;  /* markdown preview */
+  --color-bg-overlay:    #1e222d;  /* legacy echo widget */
+
+  /* --- Page-level section backgrounds --- */
+  --color-bg-table-head: #1c2230;
+  --color-bg-table-row-hover: #1a2532;
+  --color-bg-nav-link-hover: #1a2030;
+  --color-bg-card-alt:   #171c25;  /* action cards */
+  --color-bg-notice:     #10242c;  /* info notice strip */
+  --color-bg-palette:    #10131a;  /* builder palette + properties panel */
+  --color-bg-badge:      #1e2840;  /* required/status badge bg */
+  --color-bg-ctrl-hover: #253050;  /* builder ctrl button hover */
+
+  /* --- Border --- */
+  --color-border:        #2d3340;  /* primary border */
+  --color-border-subtle: #303847;  /* inset card border */
+  --color-border-input:  #3a4352;  /* input/select border */
+  --color-border-card:   #384150;  /* action card border */
+  --color-border-card-inner: #252d3d;  /* divider inside cards */
+  --color-border-question:   #1e2535;  /* question row divider (darker) */
+  --color-border-palette:    #2a3040;  /* builder palette item border */
+  --color-border-hover:  #4a5568;  /* hover border */
+
+  /* --- Text --- */
+  --color-text-primary:  #f7f8fb;
+  --color-text-white:    #ffffff;
+  --color-text-secondary:#b8c0cc;
+  --color-text-muted:    #a0aab8;
+  --color-text-subtle:   #8f98aa;
+  --color-text-subdued:  #8a95a8;  /* card body text, slightly warmer muted */
+  --color-text-dim:      #6b7588;
+  --color-text-readonly: #6a7888;
+  --color-text-table-head:#cfd6e2;
+  --color-text-light:     #d8e0ee;  /* answer text in dark viewer */
+  --color-text-section:   #c8d0e0;  /* section headings, preview body text */
+  --color-text-pale:      #f0f4fb;  /* question headings in dark viewer */
+  --color-text-palette:   #d0d8e8;  /* builder palette item labels */
+  --color-text-notice:   #dff8ff;
+  --color-text-home-label:#b7c0d1;
+
+  /* --- Accent (teal) --- */
+  --color-accent:        #3cc4dc;
+  --color-accent-dark:   #2c7a8e;
+  --color-accent-muted:  #7abbd8;  /* soft accent for badges/status text */
+
+  /* --- Home page chrome --- */
+  --color-home-chrome:   #f2f4f8;  /* home button borders, hover bg */
+
+  /* --- Success --- */
+  --color-success-bg:    #164d38;
+  --color-success-bg-deep: #12352b;
+  --color-success:       #2d8f6f;
+  --color-success-border: #1e5c47;
+  --color-success-text:  #bdf8d8;
+  --color-success-code:  #d9ffe9;
+
+  /* --- Danger --- */
+  --color-danger-bg:     #3b1f24;
+  --color-danger:        #f08a8a;
+  --color-danger-text:   #ffd7d7;
+
+  /* --- Warning / negative flag --- */
+  --color-warn-bg:       #5a2630;
+  --color-warn-text:     #ffd5dc;
+  --color-warn-action-bg:#21151a;  /* action items panel */
+  --color-warn-border:   #81404d;
+
+  /* --- Status pill neutral --- */
+  --color-status-bg:     #303744;
+  --color-status-text:   #dbe1eb;
+
+  /* --- Legacy / misc --- */
+  --color-link-hover:    #91a4d2;  /* old navbar link hover */
+  --color-echo-focus:    #6d85c6;  /* old echo input focus */
+  --color-bg-hover-dark: #1f1f1f;  /* old links hover */
+  --color-bg-step-tab-active: #f7f8fb; /* step tab active bg (same as text-primary) */
+  --color-text-step-tab-active: #151922; /* step tab active text (same as bg-raised) */
+  --color-checkbox-check:#0f1116;  /* checkmark color (matches bg-base) */
+
+  /* --- Spacing --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* --- Radius --- */
+  --radius-sm:  5px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-pill: 999px;
+
+  /* --- Typography --- */
+  --font-sans:    'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-mono:    'DM Mono', 'Cascadia Mono', 'Consolas', monospace;
+  --font-display: 'Sora', sans-serif;
+}
+
+/* ── Light Theme ────────────────────────────────────────────────────────────
+   Applied to <html data-theme="light"> on public-facing pages.
+   ────────────────────────────────────────────────────────────────────────── */
+
+[data-theme="light"] {
+  --color-bg-base:       #f6f8fb;
+  --color-bg-raised:     #ffffff;
+  --color-bg-surface:    #f0f4f8;
+  --color-bg-deep:       #e8edf4;
+  --color-border:        #d1d5db;
+  --color-border-input:  #d1d5db;
+  --color-text-primary:  #1f2937;
+  --color-text-secondary:#6b7280;
+  --color-text-muted:    #9ca3af;
+  --color-accent:        #1d4ed8;
+  --color-accent-dark:   #0f766e;
+  --color-danger:        #b91c1c;
+  --color-danger-bg:     #fef2f2;
+}
