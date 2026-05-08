@@ -24,7 +24,9 @@ async fn main() -> anyhow::Result<()> {
     tracing::trace!("database connection established");
 
     tracing::trace!("running migrations");
-    sqlx::migrate!().run(&db).await?;
+    // i am removing this for now, i do not need sqlx to manage
+    // the schemas in the database at the moment
+    // sqlx::migrate!().run(&db).await?;
     tracing::trace!("migrations complete");
 
     http::serve(config, db).await?;
