@@ -3,7 +3,10 @@ use crate::features::admin::shared::AdminFrame;
 use crate::Route;
 use dioxus::prelude::*;
 
-const LANDING_CSS: Asset = asset!("/assets/css/pages/landing.css", AssetOptions::css());
+const LANDING_CSS: Asset = asset!(
+    "/assets/css/pages/landing.css",
+    AssetOptions::css().with_static_head(true)
+);
 
 #[component]
 pub fn AdminLandingPage() -> Element {

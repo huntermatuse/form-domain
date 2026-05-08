@@ -41,7 +41,7 @@ pub(super) fn FormPreviewCanvas(
             }
 
             // Sections
-            for (si, section) in draft.sections.iter().enumerate() {
+            for (si , section) in draft.sections.iter().enumerate() {
                 {
                     let section_id = section.section_id.clone();
                     let is_section_sel = selected == Some(Selection::Section(si));
@@ -66,7 +66,7 @@ pub(super) fn FormPreviewCanvas(
                                     MarkdownDescription { markdown: desc.clone() }
                                 }
 
-                                for (qi, question) in section.questions.iter().enumerate() {
+                                for (qi , question) in section.questions.iter().enumerate() {
                                     {
                                         let question_id = question.question_id.clone();
                                         let is_q_sel = selected == Some(Selection::Question(si, qi));

@@ -60,10 +60,7 @@ pub fn CompletedFormPrintDocument(completed_form: CompletedForm) -> Element {
                         PrintQuestion {
                             key: "{question.question_id}",
                             question: question.clone(),
-                            response: response_for(
-                                &completed_form.responses,
-                                &question.question_id,
-                            ).cloned(),
+                            response: response_for(&completed_form.responses, &question.question_id).cloned(),
                         }
                     }
                 }
@@ -131,10 +128,7 @@ fn PrintQuestion(question: Question, response: Option<QuestionResponse>) -> Elem
 
                     match response.as_ref().map(|response| &response.response) {
                         Some(response) => rsx! {
-                            PrintResponseValue {
-                                question: question.clone(),
-                                response: response.clone(),
-                            }
+                            PrintResponseValue { question: question.clone(), response: response.clone() }
                         },
                         None => rsx! {
                             p { class: "completed-form-print-missing", "No response provided." }
