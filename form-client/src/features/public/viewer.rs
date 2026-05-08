@@ -8,7 +8,6 @@ use dioxus::prelude::*;
 
 const VIEWER_CSS: Asset = asset!("/assets/css/pages/public-viewer.css", AssetOptions::css());
 
-
 #[component]
 pub fn PublicCompletedFormViewerPage(token: String) -> Element {
     let token_for_fetch = token.clone();
