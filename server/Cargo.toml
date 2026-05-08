@@ -1,0 +1,53 @@
+[package]
+name = "server"
+version = "1.0.0"
+edition = "2024"
+
+[features]
+default = []
+dev-cors = []
+
+[dependencies]
+# library crates
+# common = { path = "../common" }
+
+# core server dependencies
+futures = "0.3.32"
+tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread"] }
+axum = { version = "0.8.9", features = ["tower-log"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "time", "chrono", "json"] }
+
+clap = { version = "4.6.1", features = ["derive", "env"] }
+
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+# password hashing
+argon2 = "0.5.3"
+
+# axum builds on the types in tower
+tower = "0.5.3"
+tower-http = { version = "0.6.8", features = ["trace", "cors"] }
+
+jwt = "0.16.0"
+hmac = "0.13.0"
+sha2 = "0.11.0"
+
+chrono = { version = "0.4.44", features = ["serde"] }
+
+uuid = { version = "1.23.1", features = ["serde", "v4"] }
+
+# utility Crates
+anyhow = "1.0.102"
+async-trait = "0.1.89"
+dotenvy = "0.15.7"
+itertools = "0.14.0"
+rand = "0.10.1"
+thiserror = "2.0.18"
+directories = "6.0.0"
+
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+chrono = "0.4.44"
